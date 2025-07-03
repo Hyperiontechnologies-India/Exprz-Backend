@@ -7,6 +7,7 @@ require('dotenv').config();
   process.env.DB_PASSWORD,
   {
     host: process.env.DB_HOST,
+   port: process.env.DB_PORT,
     dialect: 'mysql',
     port: 3306, // <--- Add this line if your port is non-standard or for clarity
     logging: false,
