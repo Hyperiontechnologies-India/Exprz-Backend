@@ -37,7 +37,7 @@ const path = require('path');
 
       // CORS Configuration
       const corsOptions = {
-        origin: 'http://localhost:5173',
+        origin: ['http://localhost:5173','https://aliceblue-rat-197748.hostingersite.com'],
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
         allowedHeaders: ['Content-Type', 'Authorization','Accept'],
         credentials: true,
