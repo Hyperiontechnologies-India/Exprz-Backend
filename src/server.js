@@ -22,7 +22,7 @@
 
       // CORS Configuration
       const corsOptions = {
-        origin:  "https://aliceblue-rat-197748.hostingersite.com",
+        origin:  ["https://aliceblue-rat-197748.hostingersite.com",'http://localhost:5173/'],
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
         allowedHeaders: ['Content-Type', 'Authorization','Accept'],
         credentials: true,
