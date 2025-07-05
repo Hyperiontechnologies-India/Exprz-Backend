@@ -11,7 +11,7 @@ const Category = require('./models/Category');
 connectDB(); // ✅ Log success or failure here
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://exprz.co.uk'],
+  origin: ['http://localhost:5173', 'https://exprz.co.uk'],
   credentials: true
 }));
 
