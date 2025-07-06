@@ -164,6 +164,32 @@
         }
       });
 
+// Category
+
+      app.get('/api/products/:cat', async (req, res) => {
+  try {
+    const productcat = decodeURIComponent(req.params.cat); // Use 'cat' not 'id'
+
+    const [product] = await sequelize.query(
+      'SELECT * FROM products WHERE category = ?',
+      { replacements: [productcat] }
+    );
+
+    if (!product || product.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    res.json({
+      ...product[0],
+      flavors: product[0].flavors_data ? JSON.parse(product[0].flavors_data) : []
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+      
+
       // Get All Products (Admin version with inactive products)
       app.get('/api/admin/products', async (req, res) => {
         try {
