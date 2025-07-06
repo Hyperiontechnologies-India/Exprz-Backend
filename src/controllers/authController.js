@@ -23,7 +23,7 @@ const generateOtp = () => {
 // @route   POST /api/auth/signup-request-otp
 // @access  Public
 exports.signupRequestOtp = async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password ,phone } = req.body;
 
   try {
     const userExists = await User.findOne({ where: { email } });
@@ -44,7 +44,7 @@ exports.signupRequestOtp = async (req, res) => {
       otp,
       expiresAt,
       // Store temp user data (username, hashedPassword) to retrieve later
-      tempUserData: JSON.stringify({ username, password: hashedPassword , role , IsAdmin })
+      tempUserData: JSON.stringify({ username, password: hashedPassword , role , IsAdmin ,phone })
     });
 
     await sendOtpEmail(email, otp);
@@ -78,9 +78,9 @@ exports.verifyOtp = async (req, res) => {
 
     // OTP is valid and not expired, proceed to create user
     const tempUserData = JSON.parse(otpRecord.tempUserData);
-    const { username, password , role , IsAdmin} = tempUserData; // Password is already hashed
+    const { username, password , role , IsAdmin,phone} = tempUserData; // Password is already hashed
 
-    const user = await User.create({ username, email, password , role , IsAdmin });
+    const user = await User.create({ username, email, password , role , IsAdmin ,phone });
 
     // Delete the used OTP record
     await otpRecord.destroy();
@@ -91,6 +91,7 @@ exports.verifyOtp = async (req, res) => {
         username: user.username,
         email: user.email,
         token: generateToken(user.id),
+        phone:user.phone
       });
     } else {
       res.status(400).json({ message: 'User creation failed after OTP verification.' });
