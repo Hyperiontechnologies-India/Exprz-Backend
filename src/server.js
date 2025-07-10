@@ -7,6 +7,7 @@
       const Product = require('./models/Product');
       const Category = require('./models/Category');
       const Cart=require("./models/Cart")
+      const orderController = require('./controllers/orderController');
       const router = express.Router();
        
 
@@ -50,6 +51,13 @@
       app.get('/api/protected', protect, (req, res) => {
         res.json({ message: `Welcome ${req.user.username}!` });
       });
+
+      /// order data mound /*
+
+
+        app.post('/api/orders/cod', orderController.createCODOrder);
+
+      //---------------------------------
 
       // Product API Endpoints
 
