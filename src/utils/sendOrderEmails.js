@@ -48,7 +48,11 @@ const sendOrderEmails = async (order) => {
     }
 
     try {
+        console.log("Admin email:", process.env.ADMIN_EMAIL);
+
       await transporter.sendMail(adminMail);
+      
+
     } catch (err) {
       console.log(
         `Error while sending the order mail to Admin of order no :${order.orderId} with the error $${err}`
