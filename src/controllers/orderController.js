@@ -1,4 +1,6 @@
 const OrderService = require('../services/orderService');
+const sendOrderEmails = require('../utils/sendOrderEmails');
+
 
 const orderController = {
   createCODOrder: async (req, res) => {
@@ -13,6 +15,11 @@ const orderController = {
       }
 
       const result = await OrderService.createCODOrder(orderData);
+
+      console.log("order data : "+result.order)
+    
+        // Trigger email to user and admin
+      await sendOrderEmails(result.order);
 
       res.status(201).json({
         success: true,
