@@ -7,180 +7,95 @@ const generateInvoicePDF = (order) => {
 
   doc.on('data', buffers.push.bind(buffers));
 
-  // Document styling
-  const primaryColor = '#3498db';
-  const secondaryColor = '#2c3e50';
-  const accentColor = '#e74c3c';
-  
-  // Header with logo and company info
+  const primaryColor = '#000000';
+
+  // === Logo + Company Info ===
   try {
-    // Add logo (adjust path as needed)
-    const logoPath = path.join(__dirname, 'logo.png');
-    doc.image(logoPath, 50, 45, { width: 80, height: 40 });
-    
-    // Company info to the right of logo
-    doc.fillColor(secondaryColor)
-       .fontSize(12)
-       .font('Helvetica-Bold')
-       .text('Exprz Vapes', 140, 45)
-       .font('Helvetica')
-       .fontSize(9)
-       .text('No 172, Parkinson Lane', 140, 65)
-       .text('Halifax, United Kingdom', 140, 80)
-       .text('Phone: +44 1234 567890', 140, 95)
-       .text('Email: info@exprzvapes.com', 140, 110);
+    const logoPath = path.join(__dirname, 'logo.jpg');
+    doc.image(logoPath, 50, 40, { width: 100 }); // Adjust as needed
   } catch (err) {
-    console.error('Logo not found, using text header only:', err);
-    // Fallback header without logo
-    doc.fillColor(secondaryColor)
-       .fontSize(12)
-       .font('Helvetica-Bold')
-       .text('Exprz Vapes', 50, 50)
-       .font('Helvetica')
-       .fontSize(9)
-       .text('No 172, Parkinson Lane', 50, 70)
-       .text('Halifax, United Kingdom', 50, 85)
-       .text('Phone: +44 1234 567890', 50, 100)
-       .text('Email: info@exprzvapes.com', 50, 115);
+    console.error('Logo not found:', err);
   }
 
-  // Invoice title section
-  doc.moveTo(50, 140)
-     .lineTo(550, 140)
-     .stroke(primaryColor)
-     .fillColor(primaryColor)
-     .fontSize(24)
-     .font('Helvetica-Bold')
-     .text('INVOICE', { align: 'center' })
-     .moveTo(50, 170)
-     .lineTo(550, 170)
-     .stroke(primaryColor);
+  doc.fontSize(12).fillColor(primaryColor).font('Helvetica-Bold')
+    .text('INVOICE', 0, 40, { align: 'center' });
 
-  // Invoice metadata in two columns
-  doc.fontSize(10)
-     .fillColor(secondaryColor)
-     .text(`Invoice #: ${order.orderId}`, 50, 190)
-     .text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 50, 205)
-     .text(`Payment Method: ${order.paymentMethod.toUpperCase()}`, 50, 220)
-     .text(`User ID: ${order.userid}`, 300, 190)
-     .text(`Due Date: ${new Date(order.createdAt).toLocaleDateString()}`, 300, 205);
+  doc.fontSize(10).fillColor(primaryColor).font('Helvetica-Bold')
+    .text('INVOICE FROM:', 160, 50);
 
-  // Customer information section
+  doc.font('Helvetica')
+    .text('Exprz ltd', 160, 65)
+    .text('077-211-84899', 160, 80)
+    .text('vat no :- 481185776', 160, 95)
+    .text('exprz@outlook.com', 160, 110)
+    .text('No 172, Parkinson lane , Halifax ,', 160, 125)
+    .text('Hx1 3ub', 160, 140);
+
+  // === BILL TO Section ===
   const addr = order.shippingAddress;
-  const fullAddress = `${addr.firstName} ${addr.lastName}\n${addr.streetAddress}\n${addr.city}, ${addr.county}, ${addr.postcode}\nPhone: ${addr.phone}\nInstructions: ${addr.deliveryInstructions || 'N/A'}`;
-  
-  doc.rect(50, 240, 250, 100)
-     .fillAndStroke('#f8f8f8', primaryColor)
-     .fillColor(secondaryColor)
-     .fontSize(12)
-     .font('Helvetica-Bold')
-     .text('BILL TO:', 60, 250)
-     .font('Helvetica')
-     .fontSize(10)
-     .text(fullAddress, 60, 270);
+  const billToY = 180;
 
-  // Items table
-  const columns = [
-    { label: '#', width: 30 },
-    { label: 'Description', width: 270 },
-    { label: 'Qty', width: 50 },
-    { label: 'Price', width: 70 },
-    { label: 'Amount', width: 80 }
-  ];
+  doc.font('Helvetica-Bold').text('BILL TO:', 50, billToY);
+  doc.font('Helvetica')
+    .text(`${addr.firstName} ${addr.lastName}`, 50, billToY + 15)
+    .text(addr.streetAddress, 50, billToY + 30)
+    .text(`${addr.city}, ${addr.postcode}`, 50, billToY + 45);
 
-  // Table header
-  doc.fillColor(primaryColor)
-     .rect(50, 360, 500, 25)
-     .fill()
-     .fillColor('#ffffff')
-     .fontSize(12)
-     .font('Helvetica-Bold');
-  
-  let x = 50;
-  columns.forEach(column => {
-    doc.text(column.label, x + 5, 365, { 
-      width: column.width - 10, 
-      align: column.label === 'Description' ? 'left' : 'center' 
-    });
-    x += column.width;
-  });
+  // === Invoice Metadata ===
+  const invoiceNum = `INV${order.orderId}`;
+  const dateStr = new Date(order.createdAt).toLocaleDateString('en-GB');
 
-  // Items rows
-  let y = 385;
-  order.items.forEach((item, i) => {
-    const rowHeight = calculateRowHeight(doc, item, columns[1].width);
-    
-    doc.fillColor(i % 2 === 0 ? '#ffffff' : '#f8f8f8')
-       .rect(50, y, 500, rowHeight)
-       .fill()
-       .fillColor(secondaryColor)
-       .fontSize(10);
-    
-    // Item number
-    doc.text((i + 1).toString(), 55, y + 5, { 
-      width: columns[0].width - 10, 
-      align: 'center' 
-    });
-    
-    // Product description
+  doc.text(`Number: ${invoiceNum}`, 350, billToY);
+  doc.text(`Date: ${dateStr}`, 350, billToY + 15);
+
+  // === Table Header ===
+  const tableTop = billToY + 80;
+  const startX = 50;
+
+  doc.font('Helvetica-Bold').fontSize(10);
+  doc.text('Description', startX, tableTop);
+  doc.text('Quantity', startX + 200, tableTop);
+  doc.text('Unit price', startX + 270, tableTop);
+  doc.text('VAT', startX + 340, tableTop);
+  doc.text('Amount', startX + 410, tableTop);
+
+  doc.moveTo(startX, tableTop + 15).lineTo(550, tableTop + 15).stroke();
+
+  // === Table Rows ===
+  let y = tableTop + 25;
+  doc.font('Helvetica').fontSize(10);
+
+  let subtotal = 0;
+
+  order.items.forEach((item) => {
     const description = `${item.productName}${item.flavour ? ` (${item.flavour})` : ''}`;
-    doc.text(description, 50 + columns[0].width, y + 5, { 
-      width: columns[1].width - 10, 
-      align: 'left',
-      height: rowHeight,
-      ellipsis: true
-    });
-    
-    // Quantity
-    doc.text(item.quantity.toString(), 50 + columns[0].width + columns[1].width, y + 5, { 
-      width: columns[2].width - 10, 
-      align: 'center' 
-    });
-    
-    // Price
-    doc.text(`₹${Number(item.price).toFixed(2)}`, 50 + columns[0].width + columns[1].width + columns[2].width, y + 5, { 
-      width: columns[3].width - 10, 
-      align: 'right' 
-    });
-    
-    // Amount
-    doc.text(`₹${(item.price * item.quantity).toFixed(2)}`, 50 + columns[0].width + columns[1].width + columns[2].width + columns[3].width, y + 5, { 
-      width: columns[4].width - 10, 
-      align: 'right' 
-    });
-    
-    y += rowHeight;
+    const quantity = item.quantity;
+    const unitPrice = parseFloat(item.price);
+    const vatRate = 0.20;
+    const amount = unitPrice * quantity;
+
+    doc.text(description, startX, y);
+    doc.text(quantity.toString(), startX + 200, y);
+    doc.text(`£${unitPrice.toFixed(2)}`, startX + 270, y);
+    doc.text('20.0 %', startX + 340, y);
+    doc.text(`£${amount.toFixed(2)}`, startX + 410, y);
+
+    subtotal += amount;
+    y += 20;
   });
 
-  // Summary section
-  doc.fillColor('#ffffff')
-     .rect(350, y + 20, 200, 120)
-     .stroke(primaryColor)
-     .fill()
-     .fillColor(secondaryColor)
-     .fontSize(10)
-     .text('Subtotal:', 360, y + 30)
-     .text(`₹${order.subtotal.toFixed(2)}`, 460, y + 30, { align: 'right' })
-     .text('Shipping:', 360, y + 50)
-     .text(`₹${order.shippingFee?.toFixed(2) || '0.00'}`, 460, y + 50, { align: 'right' })
-     .text('Tax:', 360, y + 70)
-     .text(`₹${order.tax.toFixed(2)}`, 460, y + 70, { align: 'right' })
-     .moveTo(360, y + 90)
-     .lineTo(460, y + 90)
-     .stroke(secondaryColor)
-     .font('Helvetica-Bold')
-     .text('Total Amount:', 360, y + 100)
-     .text(`₹${order.totalAmount.toFixed(2)}`, 460, y + 100, { align: 'right' })
-     .fontSize(8)
-     .fillColor(primaryColor)
-     .text('Thank you for your business!', 360, y + 120);
+  // === Totals Section ===
+  const vatAmount = subtotal * 0.20;
+  const totalAmount = subtotal + vatAmount;
+  const paidAmount = 0;
+  const balanceDue = totalAmount - paidAmount;
 
-  // Footer
-  doc.fontSize(8)
-     .fillColor(secondaryColor)
-     .text('Exprz Vapes | Registered in England No. 12345678 | VAT No. GB123456789', 50, 800, { align: 'center' })
-     .text('Terms: Payment due within 15 days. Late fees may apply at 1.5% per month.', 50, 815, { align: 'center' })
-     .text('Returns accepted within 14 days with original receipt.', 50, 830, { align: 'center' });
+  doc.font('Helvetica-Bold').fontSize(10);
+  doc.text(`SUBTOTAL: £${subtotal.toFixed(2)}`, startX, y + 20);
+  doc.text(`VAT: £${vatAmount.toFixed(2)}`, startX, y + 40);
+  doc.text(`TOTAL: £${totalAmount.toFixed(2)}`, startX, y + 60);
+  doc.text(`PAID: £${paidAmount.toFixed(2)}`, startX, y + 80);
+  doc.text(`BALANCE DUE £${balanceDue.toFixed(2)}`, startX, y + 100);
 
   doc.end();
 
@@ -191,14 +106,5 @@ const generateInvoicePDF = (order) => {
     });
   });
 };
-
-// Helper function to calculate row height
-function calculateRowHeight(doc, item, descriptionWidth) {
-  const description = `${item.productName}${item.flavour ? ` (${item.flavour})` : ''}`;
-  const height = doc.heightOfString(description, { 
-    width: descriptionWidth - 10 
-  });
-  return Math.max(height + 10, 25); // Minimum row height of 25
-}
 
 module.exports = generateInvoicePDF;
