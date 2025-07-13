@@ -16,8 +16,8 @@ const generateInvoicePDF = (order) => {
 
   // === Logo ===
   try {
-    const logoPath = path.join(__dirname, 'logo.png');
-    doc.image(logoPath, 440, 30, { width: 90 });
+    const logoPath = path.join(__dirname, 'logo.jpg');
+    doc.image(logoPath, 440, 30, { width: 100 });
   } catch (e) {
     console.error('Logo missing:', e.message);
   }
@@ -31,17 +31,22 @@ const generateInvoicePDF = (order) => {
     .text('No 172, Parkinson lane , Halifax ,')
     .text('Hx1 3ub');
 
-  // === Bill To ===
+  // === Bill To Section ===
   const addr = order.shippingAddress;
-  doc.fontSize(9).fillColor(red).font('Helvetica-Bold').text('BILL TO:', 230, 80);
+  doc.fillColor(red).font('Helvetica-Bold').text('BILL TO:', 230, 80);
   doc.fillColor(black).font('Helvetica').text(`${addr.firstName} ${addr.lastName}`, 230, 95)
     .text(addr.streetAddress)
     .text(`${addr.city}, ${addr.postcode}`);
 
-  // === Invoice Number / Date ===
-  doc.fontSize(9).font('Helvetica').fillColor(black);
-  doc.text(`Number: INV${order.orderId}`, 420, 95);
-  doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString('en-GB')}`, 420, 110);
+  // === Invoice Info ===
+  const invoiceNumber = `INV${order.orderId}`;
+  const ukDate = new Date(order.createdAt).toLocaleDateString('en-GB', {
+    day: '2-digit', month: '2-digit', year: 'numeric'
+  });
+
+  doc.font('Helvetica').fontSize(9);
+  doc.text(`Number: ${invoiceNumber}`, 420, 95, { align: 'right' });
+  doc.text(`Date: ${ukDate}`, 420, 110, { align: 'right' });
 
   // === Table Header ===
   const tableTop = 190;
@@ -70,13 +75,12 @@ const generateInvoicePDF = (order) => {
     const description = `${item.productName}${item.flavour ? ` (${item.flavour})` : ''}`;
     const quantity = item.quantity;
     const unitPrice = parseFloat(item.price);
-    const vatRate = 0.20;
     const amount = unitPrice * quantity;
 
     doc.fillColor(i % 2 === 0 ? '#fff' : gray).rect(40, y, 520, 25).fill();
     doc.fillColor(black).font('Helvetica');
 
-    doc.text(description, colX.desc + 5, y + 7, { width: 200 });
+    doc.text(description, colX.desc + 5, y + 7, { width: 240, ellipsis: true });
     doc.text(quantity.toString(), colX.qty + 5, y + 7);
     doc.text(`£${unitPrice.toFixed(2)}`, colX.price + 5, y + 7);
     doc.text('20.0 %', colX.vat + 5, y + 7);
@@ -87,32 +91,32 @@ const generateInvoicePDF = (order) => {
   });
 
   // === Totals ===
-  const vatAmount = subtotal * 0.2;
+  const vatAmount = subtotal * 0.20;
   const totalAmount = subtotal + vatAmount;
   const paidAmount = 0;
-  const due = totalAmount - paidAmount;
+  const balanceDue = totalAmount - paidAmount;
 
-  const summaryX = 400;
   const summaryY = y + 20;
+  doc.font('Helvetica-Bold').fillColor(black).fontSize(10);
 
-  doc.fontSize(10).fillColor(black).font('Helvetica-Bold');
-  doc.text('SUBTOTAL:', summaryX, summaryY);
-  doc.text('VAT:', summaryX, summaryY + 15);
-  doc.text('TOTAL:', summaryX, summaryY + 30);
-  doc.text('PAID:', summaryX, summaryY + 45);
-  doc.text('BALANCE DUE', summaryX, summaryY + 75);
+  doc.text('SUBTOTAL:', 400, summaryY);
+  doc.text('VAT:', 400, summaryY + 15);
+  doc.text('TOTAL:', 400, summaryY + 30);
+  doc.text('PAID:', 400, summaryY + 45);
 
-  doc.font('Helvetica');
+  doc.font('Helvetica').fillColor(black);
   doc.text(`£${subtotal.toFixed(2)}`, 500, summaryY, { align: 'right' });
   doc.text(`£${vatAmount.toFixed(2)}`, 500, summaryY + 15, { align: 'right' });
   doc.text(`£${totalAmount.toFixed(2)}`, 500, summaryY + 30, { align: 'right' });
   doc.text(`£${paidAmount.toFixed(2)}`, 500, summaryY + 45, { align: 'right' });
 
-  // === Balance Due Box ===
-  doc.rect(40, summaryY + 70, 180, 30).fill('#000');
+  // === Final BALANCE DUE Section ===
+  const balanceY = summaryY + 80;
+
+  doc.rect(320, balanceY, 240, 30).fill(black);
   doc.fillColor('#fff').fontSize(12).font('Helvetica-Bold');
-  doc.text('BALANCE DUE', 50, summaryY + 78);
-  doc.text(`£${due.toFixed(2)}`, 160, summaryY + 78, { align: 'right' });
+  doc.text('BALANCE DUE', 330, balanceY + 9, { align: 'left' });
+  doc.text(`£${balanceDue.toFixed(2)}`, 540, balanceY + 9, { align: 'right' });
 
   doc.end();
 
