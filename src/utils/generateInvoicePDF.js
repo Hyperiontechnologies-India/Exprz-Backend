@@ -16,11 +16,12 @@ const generateInvoicePDF = (order) => {
   // === Header ===
   doc.fillColor(black).fontSize(20).font('Helvetica-Bold').text('INVOICE', 40, 40);
 
-  // === Logo (optimized size and position) ===
+  // === Logo ===
   try {
     const logoPath = path.join(__dirname, 'logo.jpg');
-    doc.image(logoPath, 440, 30, { 
-      width: 100,
+    // Make logo responsive - reduce width and adjust position
+    doc.image(logoPath, 460, 30, { 
+      width: 80,
       align: 'right'
     });
   } catch (e) {
@@ -43,40 +44,18 @@ const generateInvoicePDF = (order) => {
     .text(addr.streetAddress)
     .text(`${addr.city}, ${addr.postcode}`);
 
-  // === Invoice Info (perfectly aligned) ===
-  const invoiceNumber = `INV${order.orderId}`.padEnd(18, ' '); // Fixed 18 chars
+  // === Invoice Info ===
+  const invoiceNumber = `${order.orderId}`;
   const ukDate = new Date(order.createdAt).toLocaleDateString('en-GB', {
     day: '2-digit', month: '2-digit', year: 'numeric'
   });
 
-  // Right-aligned invoice info with perfect spacing
+  // Adjust right-side info to avoid logo overlap
   doc.font('Helvetica').fontSize(9);
-  
-  // Invoice Number (top line)
-  doc.text('Number:', 400, 95, { 
-    width: 140, 
-    align: 'right',
-    lineBreak: false
-  });
-  doc.text(invoiceNumber, 400, 95, { 
-    width: 140, 
-    align: 'right',
-    lineBreak: false,
-    indent: 85
-  });
-  
-  // Date (with 20px padding below invoice number)
-  doc.text('Date:', 400, 115, { 
-    width: 140, 
-    align: 'right',
-    lineBreak: false
-  });
-  doc.text(ukDate, 400, 115, { 
-    width: 140, 
-    align: 'right',
-    lineBreak: false,
-    indent: 85
-  });
+  doc.text(`Number:`, 400, 95, { width: 100, align: 'right' });
+  doc.text(invoiceNumber, 400, 110, { width: 100, align: 'right' });
+  doc.text(`Date:`, 400, 140, { width: 100, align: 'right' });  // Changed from 125 to 140 for more gap
+  doc.text(ukDate, 400, 155, { width: 100, align: 'right' });  // Changed from 140 to 155 for more gap
 
   // === Table Header ===
   const tableTop = 190;
@@ -150,9 +129,15 @@ const generateInvoicePDF = (order) => {
   doc.rect(340, balanceY, 220, 30).fill(black);
   doc.fillColor(white).fontSize(12).font('Helvetica-Bold');
   
-  // Perfectly aligned balance due text
-  doc.text('BALANCE DUE:', 350, balanceY + 9);
-  doc.text(`£${balanceDue.toFixed(2)}`, 540, balanceY + 9, { align: 'right' });
+  // Calculate text width for proper alignment
+  const balanceText = 'BALANCE DUE:';
+  const balanceTextWidth = doc.widthOfString(balanceText);
+  const amountText = `£${balanceDue.toFixed(2)}`;
+  const amountTextWidth = doc.widthOfString(amountText);
+  
+  // Position text with proper padding
+  doc.text(balanceText, 350, balanceY + 9);
+  doc.text(amountText, 540 - amountTextWidth, balanceY + 9);
 
   doc.end();
 
