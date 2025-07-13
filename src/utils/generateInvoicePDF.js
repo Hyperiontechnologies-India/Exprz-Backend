@@ -45,14 +45,14 @@ const generateInvoicePDF = (order) => {
     .text(`${addr.city}, ${addr.postcode}`);
 
   // === Invoice Info ===
-  const invoiceNumber = `INV${order.orderId}`;
+  const invoiceNumber = `${order.orderId}`;
   const ukDate = new Date(order.createdAt).toLocaleDateString('en-GB', {
     day: '2-digit', month: '2-digit', year: 'numeric'
   });
 
   // Adjust right-side info to avoid logo overlap
   doc.font('Helvetica').fontSize(9);
-  doc.text(`Invoice Number:`, 400, 95, { width: 100, align: 'right' });
+  doc.text(`Number:`, 400, 95, { width: 100, align: 'right' });
   doc.text(invoiceNumber, 400, 110, { width: 100, align: 'right' });
   doc.text(`Date:`, 400, 125, { width: 100, align: 'right' });
   doc.text(ukDate, 400, 140, { width: 100, align: 'right' });
