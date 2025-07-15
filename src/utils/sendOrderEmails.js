@@ -3,8 +3,9 @@ const generateInvoicePDF = require("./generateInvoicePDF");
 const transporter = require("../config/transporter"); // or from email.js if exported there
 
 const sendOrderEmails = async (order) => {
+   
   try {
-    const user = await User.findByPk(order.userid);
+    const user = await User.findByPk(order.userId);
     if (!user || !user.email) throw new Error("User email not found");
 
     const pdfBuffer = await generateInvoicePDF(order);

@@ -7,8 +7,12 @@
       const Product = require('./models/Product');
       const Category = require('./models/Category');
       const Cart=require("./models/Cart")
-      const orderController = require('./controllers/orderController');
+      const Order=require("./models/Order")
       const router = express.Router();
+      const { generateOrderId } = require('./utils/helpers');
+      const sendOrderEmails = require('./utils/sendOrderEmails');
+      const sendOrderWhatsApp = require('./utils/sendOrderWhatsApp');
+      
        
 
     
@@ -55,7 +59,7 @@
       /// order data mound /*
 
 
-        app.post('/api/orders/cod', orderController.createCODOrder);
+         
 
       //---------------------------------
 
@@ -723,6 +727,162 @@ app.delete('/api/cart/clear/:userid', async (req, res) => {
     res.status(500).json({ error: 'Failed to clear cart' });
   }
 });
+
+
+
+//------------------------------------//
+
+// ORDER CHECKOUT CODE 
+
+// /api/cart/checkout
+app.post('/api/cart/checkout', async (req, res) => {
+  try {
+    const { userid, shippingAddress } = req.body;
+
+    if (!userid || !shippingAddress) {
+      return res.status(400).json({ error: "User ID and shipping address required" });
+    }
+
+    const cartItems = await Cart.findAll({
+      where: { userid },
+      include: [{ model: Product, as: 'product' }]
+    });
+
+    if (!cartItems.length) {
+      return res.status(400).json({ error: "Cart is empty" });
+    }
+
+    let subtotal = 0;
+    let totalVAT = 0;
+    const computedItems = [];
+
+    for (const item of cartItems) {
+      const price = item.product.price || 0;
+      const quantity = item.quantity || 1;
+
+      const flavour = typeof item.flavour === "object" && item.flavour !== null
+        ? item.flavour
+        : typeof item.flavour === "string"
+          ? { flr: item.flavour, vat: 20 }
+          : { flr: "N/A", vat: 20 };
+
+      const vatRate = flavour.vat || 20;
+      const vatDecimal = vatRate / 100;
+
+      const itemTax = price * vatDecimal * quantity;
+      const totalItemPrice = (price + (price * vatDecimal)) * quantity;
+
+      subtotal += price * quantity;
+      totalVAT += itemTax;
+
+      computedItems.push({
+        productId: item.product.id,
+        productName: item.product.name,
+        quantity,
+        price,
+        flavour,
+        tax: +itemTax.toFixed(2),
+        vatRate,
+        totalItemPrice: +totalItemPrice.toFixed(2)
+      });
+    }
+
+    const totalAmount = +(subtotal + totalVAT).toFixed(2);
+    const orderId = generateOrderId();
+
+    const order = await Order.create({
+      orderId,
+      userId: userid,
+      items: computedItems,
+      subtotal: +subtotal.toFixed(2),
+      tax: +totalVAT.toFixed(2),
+      totalAmount,
+      paymentMethod: 'cod',
+      paymentStatus: false,
+      status: 'pending',
+      shippingAddress
+    });
+
+    await Cart.destroy({ where: { userid } });
+
+    // Send invoice email
+    try {
+      await sendOrderEmails(order);
+      await sendOrderWhatsApp(order); 
+    } catch (emailErr) {
+      console.error("Failed to send invoice email:", emailErr.message);
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: 'Order placed and invoice emailed',
+      order
+    });
+
+  } catch (err) {
+    console.error("Checkout Error:", err);
+    res.status(500).json({ error: "Failed to process checkout", details: err.message });
+  }
+});
+
+
+ // /api/cart/calculate
+app.post('/api/cart/calculate', async (req, res) => {
+  try {
+    const { userid } = req.body;
+
+    if (!userid) {
+      return res.status(400).json({ success: false, error: "User ID is required." });
+    }
+
+    const cartItems = await Cart.findAll({
+      where: { userid },
+      include: [{ model: Product, as: 'product' }]
+    });
+
+    if (!cartItems.length) {
+      return res.status(400).json({ success: false, error: "Cart is empty." });
+    }
+
+    let subtotal = 0;
+    let totalVAT = 0;
+
+    for (const item of cartItems) {
+      const price = item.product.price || 0;
+      const quantity = item.quantity || 1;
+
+      // Extract VAT rate from flavour object, or fallback to default
+      let vatRate = 20;
+      if (typeof item.flavour === "object" && item.flavour !== null && item.flavour.vat) {
+        vatRate = item.flavour.vat;
+      }
+
+      const vatDecimal = vatRate / 100;
+      const itemTax = price * vatDecimal * quantity;
+
+      subtotal += price * quantity;
+      totalVAT += itemTax;
+    }
+
+    const totalAmount = +(subtotal + totalVAT).toFixed(2);
+
+    return res.status(200).json({
+      success: true,
+      subtotal: +subtotal.toFixed(2),
+      tax: +totalVAT.toFixed(2),
+      totalAmount
+    });
+
+  } catch (error) {
+    console.error("Error in /api/cart/calculate:", error);
+    res.status(500).json({ success: false, error: "Failed to calculate totals.", details: error.message });
+  }
+});
+
+
+
+
+//------------------------------------//
  
       
 
