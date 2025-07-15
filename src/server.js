@@ -808,7 +808,7 @@ app.post('/api/cart/checkout', async (req, res) => {
     // Send invoice email
     try {
       await sendOrderEmails(order);
-      await sendOrderWhatsApp(order); 
+     // await sendOrderWhatsApp(order); //
     } catch (emailErr) {
       console.error("Failed to send invoice email:", emailErr.message);
     }
