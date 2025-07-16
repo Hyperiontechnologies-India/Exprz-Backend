@@ -17,16 +17,16 @@ const sendOtpEmail = async (email, otp) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
-    subject: 'Your E-commerce App OTP Verification',
+    subject: 'Your Exprz Ecommerce account OTP Verification',
     html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
         <h2>Email Verification</h2>
         <p>Hello,</p>
-        <p>Thank you for signing up for our E-commerce App! To complete your registration, please use the following One-Time Password (OTP):</p>
+        <p>Thank you for signing up for our Exprz Ecommerce web application! To complete your registration, please use the following One-Time Password (OTP):</p>
         <p style="font-size: 24px; font-weight: bold; color: #007bff; background-color: #f0f0f0; padding: 10px 20px; border-radius: 5px; display: inline-block;">${otp}</p>
         <p>This OTP is valid for 5 minutes. Do not share this OTP with anyone.</p>
         <p>If you did not request this, please ignore this email.</p>
-        <p>Best regards,<br>The E-commerce App Team</p>
+        <p>Best regards,<br>The Exprz Ecommerce Team</p>
       </div>
     `,
   };
