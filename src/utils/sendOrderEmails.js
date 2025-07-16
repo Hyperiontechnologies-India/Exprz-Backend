@@ -6,6 +6,8 @@ const sendOrderEmails = async (order) => {
    
   try {
     const user = await User.findByPk(order.userId);
+
+    console.log(user)
     if (!user || !user.email) throw new Error("User email not found");
 
     const pdfBuffer = await generateInvoicePDF(order);
